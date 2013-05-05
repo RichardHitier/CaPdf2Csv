@@ -1,0 +1,29 @@
+basedir=$(dir $(realpath $(lastword ${MAKEFILE_LIST})))
+headscsv=${basedir}/heads.csv
+all_pdf_files=$(wildcard *pdf)
+all_txt_files=$(patsubst %.pdf,%.txt,${all_pdf_files})
+
+%raw:%pdf
+	/usr/bin/pdftotext -layout $< $@
+
+%grp:%raw
+	/bin/egrep '^ *[0-9][0-9] [0-9][0-9]' $< > $@
+
+%txt:%grp
+	sed -e "s/^ *\([0-9][0-9]\) \([0-9][0-9]\) \+\([^ ].*\)[0-9][0-9] [0-9][0-9]/\1\/\2\/${year};\3;/" \
+		-e "/;\(VIR\|REMIS\)/!s/;\([^;]*\)$$/;-\1/" $< > $@
+
+clean-all:
+	rm *txt *grp *raw
+
+all-txt: 
+	 @echo ${all_txt_files}
+
+
+36016373000.csv: ${all_txt_files}
+	cat ${headscsv} $?  > $@
+
+
+
+
+
