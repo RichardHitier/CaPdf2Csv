@@ -14,7 +14,7 @@ all_txt_files=$(patsubst %.pdf,%.txt,${all_pdf_files})
 		-e "/;\(VIR\|REMIS\)/!s/;\([^;]*\)$$/;-\1/" $< > $@
 
 clean-all:
-	rm *txt *grp *raw
+	-rm *txt *grp *raw *csv
 
 all-txt: 
 	 @echo ${all_txt_files}
