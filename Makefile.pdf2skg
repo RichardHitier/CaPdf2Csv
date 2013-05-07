@@ -1,29 +1,57 @@
-basedir=$(dir $(realpath $(lastword ${MAKEFILE_LIST})))
+#
+# Makefile to turn bank pdf monthly sheets into one yearly csv skrooge compatible.
+#
+#  1- $year var should be set while running this makefile
+#     inside the directory containing the pdf files.
+#
+#	2- you end up with a $(year).csv file ready to import
+#
+#
+
+makefilename=$(lastword ${MAKEFILE_LIST})
+basedir=$(dir $(realpath ${makefilename}))
 headscsv=${basedir}/heads.csv
+
 all_pdf_files=$(wildcard *pdf)
 all_txt_files=$(patsubst %.pdf,%.txt,${all_pdf_files})
 
+.PHONY: default
+default:
+ifeq (${year},)
+	@echo "Please, run this makefile setting the year as parameter"
+	@echo "USAGE: 'make -f $(makefilename) year=2009'"
+	@echo "or try another available target: "
+	@echo "    clean-all: remove all files but pdf"
+	@echo "    MonthSheetFileName.raw: alone pdf converted from pdf"
+	@echo "    MonthSheetFileName.grp: then dated lines filtered"
+	@echo "    MonthSheetFileName.raw: and semicolon added at last"
+else
+	$(MAKE) -f ${makefilename} ${year}
+endif
+
+.PHONY: clean-all
+clean-all:
+	-rm *txt *grp *raw *csv
+
+# convert pdf to text
 %raw:%pdf
 	/usr/bin/pdftotext -layout $< $@
 
+# isolate dated lines 
 %grp:%raw
 	/bin/egrep '^ *[0-9][0-9] [0-9][0-9]' $< > $@
 
+# add semicolons at proper places.
 %txt:%grp
 	sed -e "s/^ *\([0-9][0-9]\) \([0-9][0-9]\) \+\([^ ].*\)[0-9][0-9] [0-9][0-9]/\1\/\2\/${year};\3;/" \
 		-e "/;\(VIR\|REMIS\)/!s/;\([^;]*\)$$/;-\1/" $< > $@
 
-clean-all:
-	-rm *txt *grp *raw *csv
+#
+# main stuff:
+# add headings, and concatenate
+#
+.PHONY: ${year}
+${year}: ${year}.csv
 
-all-txt: 
-	 @echo ${all_txt_files}
-
-
-36016373000.csv: ${all_txt_files}
+${year}.csv: ${all_txt_files}
 	cat ${headscsv} $?  > $@
-
-
-
-
-
