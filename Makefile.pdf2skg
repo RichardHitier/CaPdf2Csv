@@ -16,6 +16,8 @@ headscsv=${basedir}/heads.csv
 
 all_pdf_files=$(wildcard *pdf)
 all_txt_files=$(patsubst %.pdf,%.txt,${all_pdf_files})
+all_grp_files=$(patsubst %.pdf,%.grp,${all_pdf_files})
+all_raw_files=$(patsubst %.pdf,%.raw,${all_pdf_files})
 
 .PHONY: default
 default:
@@ -26,7 +28,7 @@ ifeq (${year},)
 	@echo "    clean-all: remove all files but pdf"
 	@echo "    MonthSheetFileName.raw: alone pdf converted from pdf"
 	@echo "    MonthSheetFileName.grp: then dated lines filtered"
-	@echo "    MonthSheetFileName.raw: and semicolon added at last"
+	@echo "    MonthSheetFileName.txt: and semicolon added at last"
 else
 	$(MAKE) -f ${makefilename} ${year}
 endif
@@ -41,7 +43,7 @@ clean-all:
 
 # isolate dated lines 
 %grp:%raw
-	/bin/egrep '^ *[0-9][0-9] [0-9][0-9]' $< > $@
+	/bin/egrep '^ *[0-9][0-9] [0-9][0-9] ' $< > $@
 
 # add semicolons at proper places.
 %txt:%grp
