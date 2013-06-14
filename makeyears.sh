@@ -8,5 +8,6 @@ do
     make -f ../Makefile.pdf2skg clean-all
     make -f ../Makefile.pdf2skg year=${dir}
     #cat ${dir}.csv >> ../allyears.csv
-    #cd ..
+	mv ${dir}.csv ../
+    cd ..
 done
