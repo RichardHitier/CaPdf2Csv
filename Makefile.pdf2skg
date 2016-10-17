@@ -4,7 +4,7 @@
 #  1- $year var should be set while running this makefile
 #     inside the directory containing the pdf files.
 #
-#	2- you end up with a $(year).csv file ready to import
+#  2- you end up with a $(year).csv file ready to import
 #
 #
 
