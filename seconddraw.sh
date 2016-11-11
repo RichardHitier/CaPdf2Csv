@@ -17,30 +17,53 @@ fi
 #
 year=`echo $file |cut -d"_" -f9`
 account=`echo $file |cut -d"_" -f2`
+numfile=`echo $file | cut -d"_" -f5`
+
+prevyear=`echo "$year - 1" |bc`
 
 
 # Transformations:
+#
 
-# 0. to text
-pdftotext -layout $1 - |
-# 1. only get lines with proper date format at beginning
-egrep '^ *[0-9][0-9]\.[0-9][0-9] '  |
-# 2. then get rid of trailing spaces
-sed -e "s/^ *//" |
-# 3. keep only one of the 2 dates
-sed -e "s/^\([0-9][0-9]\.[0-9][0-9]\) *\([0-9][0-9]\.[0-9][0-9]\) */\1 /" |
-# 4. make proper date (TODO: year-1 if month = 1 && filenum == 001 )
-sed -e "s/\([0-9][0-9]\)\.\([0-9][0-9]\) */\1\/\2\/$year /" |
-# 5. add ';' as field separator
-sed -r -e 's/^.{66}/&;/'  -e 's/^.{11}/&;/' |
-# 6. get rid of trailing chars and align last column
-sed -e "s/ *¨$//"  -e "s/; *\([^;]*\)$/; \1/" |
-# 7. '-' everywhere unless if "Virement" or "Rem Chq"
-sed -e "/\(Virement\|Rem Chq\)/!s/; *\([^;]*\)$/;-\1/" |
-# 8. prepend with account number
-sed -e "s/.*/$account;\0/" |
-cat
+# convert pdf to csv 
+totxt()
+{
+
+    # 0. to text
+    pdftotext -layout $1 - |
+    # 1. only get lines with proper date format at beginning
+    egrep '^ *[0-9][0-9]\.[0-9][0-9] '  |
+    # 2. then get rid of trailing spaces
+    sed -e "s/^ *//" |
+    # 3. keep only one of the 2 dates
+    sed -e "s/^\([0-9][0-9]\.[0-9][0-9]\) *\([0-9][0-9]\.[0-9][0-9]\) */\1 /" |
+    # 4. make proper date 
+    sed -e "s/\([0-9][0-9]\)\.\([0-9][0-9]\) */\1\/\2\/$year /" |
+    # 5. add ';' as field separator
+    sed -r -e 's/^.{66}/&;/'  -e 's/^.{11}/&;/' |
+    # 6. get rid of trailing chars and align last column
+    sed -e "s/ *¨$//"  -e "s/; *\([^;]*\)$/; \1/" |
+    # 7. '-' everywhere unless if "Virement" or "Rem Chq"
+    sed -e "/\(Virement\|Rem Chq\)/!s/; *\([^;]*\)$/;-\1/" |
+    # 8. prepend with account number
+    sed -e "s/.*/$account;\0/" |
+
+    cat
+}
+
+# rewrite year of december dates
+toprevyear()
+{
+    cat | 
+    sed -e "s#/12/$year#/12/$prevyear#"
+}
 
 
+if [ $numfile -eq '001' ]
+then
+    totxt $1 | toprevyear
+else
+    totxt $1 
+fi
 
 # vim: tw=0
