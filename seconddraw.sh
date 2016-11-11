@@ -4,7 +4,8 @@
 # to .csv file importable to skrooge
 
 
-# guess if we are dealing with the second pdf format
+# guess if we are dealing with the second file format
+# (from 001 to 012 in one year )
 #
 file=`echo $1 | egrep 'Compte.*Rele.*_n_[0-9][0-9][0-9]_'` 
 
@@ -25,12 +26,17 @@ prevyear=`echo "$year - 1" |bc`
 # Transformations:
 #
 
+raw()
+{
+    # 0. to text
+    pdftotext -layout $1 - |
+    cat 
+}
+
 # convert pdf to csv 
 totxt()
 {
-
-    # 0. to text
-    pdftotext -layout $1 - |
+    cat |
     # 1. only get lines with proper date format at beginning
     egrep '^ *[0-9][0-9]\.[0-9][0-9] '  |
     # 2. then get rid of trailing spaces
@@ -47,7 +53,7 @@ totxt()
     sed -e "/\(Virement\|Rem Chq\)/!s/; *\([^;]*\)$/;-\1/" |
     # 8. prepend with account number
     sed -e "s/.*/$account;\0/" |
-
+    # trick for commenting upper lines if necessary
     cat
 }
 
@@ -59,11 +65,28 @@ toprevyear()
 }
 
 
-if [ $numfile -eq '001' ]
-then
-    totxt $1 | toprevyear
-else
-    totxt $1 
-fi
+case $2 in
+    # only pdf2txt
+    raw)
+        raw $1
+        exit
+        ;;
+    # from raw to csv
+    totext)
+        cat $1 | totxt
+        exit
+        ;;
+    # whole change from pdf to csv 
+    *)
+        # change december year based on file number
+        if [ $numfile -eq '001' ]
+        then
+            raw $1 | totxt | toprevyear
+        else
+            raw $1 | totxt 
+        fi
+        ;;
+esac
+
 
 # vim: tw=0
