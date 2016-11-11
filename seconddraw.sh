@@ -2,30 +2,14 @@
 #
 # Transform pdf files from the bank
 # to .csv file importable to skrooge
-
-
-# guess if we are dealing with the second file format
-# (from 001 to 012 in one year )
-#
-file=`echo $1 | egrep 'Compte.*Rele.*_n_[0-9][0-9][0-9]_'` 
-
-if [ -z "$file" ]
-then
-    exit
-fi
-
-# set some vars
-#
-year=`echo $file |cut -d"_" -f9`
-account=`echo $file |cut -d"_" -f2`
-numfile=`echo $file | cut -d"_" -f5`
-
-prevyear=`echo "$year - 1" |bc`
+# usage: ./seconddraw.sh Comptexxxxxx.pdf [command]
+# 
 
 
 # Transformations:
 #
 
+# convert pdf to text
 raw()
 {
     # 0. to text
@@ -33,7 +17,7 @@ raw()
     cat 
 }
 
-# convert pdf to csv 
+# convert raw to csv 
 totxt()
 {
     cat |
@@ -64,7 +48,50 @@ toprevyear()
     sed -e "s#/12/$year#/12/$prevyear#"
 }
 
+# Usage
+#
+usage()
+{
+    cat << EOF
+Usage:
+    $0 filename [command]
 
+where command is one of:
+
+    raw
+    txt
+    whole
+
+EOF
+}
+
+################################################################################
+# Main stuff
+
+# 1. give file as arg
+#
+[ -z $1 ] && usage && exit
+
+# 2. guess if we are dealing with the second file format
+# (from 001 to 012 in one year )
+#
+file=`echo $1 | egrep 'Compte.*Rele.*_n_[0-9][0-9][0-9]_'` 
+
+if [ -z "$file" ]
+then
+    exit
+fi
+
+# 3. set some vars
+#
+year=`echo $file |cut -d"_" -f9`
+account=`echo $file |cut -d"_" -f2`
+numfile=`echo $file | cut -d"_" -f5`
+
+prevyear=`echo "$year - 1" |bc`
+
+# 4. compute command
+#
 case $2 in
     # only pdf2txt
     raw)
@@ -72,12 +99,12 @@ case $2 in
         exit
         ;;
     # from raw to csv
-    totext)
+    txt)
         cat $1 | totxt
         exit
         ;;
     # whole change from pdf to csv 
-    *)
+    whole)
         # change december year based on file number
         if [ $numfile -eq '001' ]
         then
@@ -85,6 +112,9 @@ case $2 in
         else
             raw $1 | totxt 
         fi
+        ;;
+    *)
+        echo "nothing to do"
         ;;
 esac
 
